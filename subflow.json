@@ -1,0 +1,233 @@
+{
+    "id": "be4ed1a665e290d8",
+    "type": "subflow",
+    "name": "Timer",
+    "info": "## Timer for data acquisition purposes.\r\n\r\nNode is developed to inject timestamp every configured interval.\r\n\r\nFor example if interval is configured to 5 minutes, node releases 12:00:00 then \r\n12:05:00, 12:10:00 etc. \r\n\r\nAccurate to one second. Milliseconds reading can vary. ",
+    "category": "Tequ-API Client",
+    "in": [],
+    "out": [
+        {
+            "x": 700,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "f0820dd4.6c427",
+                    "port": 0
+                }
+            ]
+        }
+    ],
+    "env": [
+        {
+            "name": "interval",
+            "type": "str",
+            "value": "300",
+            "ui": {
+                "label": {
+                    "en-US": "Interval"
+                },
+                "type": "select",
+                "opts": {
+                    "opts": [
+                        {
+                            "l": {
+                                "en-US": "5 seconds"
+                            },
+                            "v": "5"
+                        },
+                        {
+                            "l": {
+                                "en-US": "10 seconds"
+                            },
+                            "v": "10"
+                        },
+                        {
+                            "l": {
+                                "en-US": "15 seconds"
+                            },
+                            "v": "15"
+                        },
+                        {
+                            "l": {
+                                "en-US": "30 seconds"
+                            },
+                            "v": "30"
+                        },
+                        {
+                            "l": {
+                                "en-US": "1 min"
+                            },
+                            "v": "60"
+                        },
+                        {
+                            "l": {
+                                "en-US": "5 min"
+                            },
+                            "v": "300"
+                        },
+                        {
+                            "l": {
+                                "en-US": "10 min"
+                            },
+                            "v": "600"
+                        },
+                        {
+                            "l": {
+                                "en-US": "15 min"
+                            },
+                            "v": "900"
+                        },
+                        {
+                            "l": {
+                                "en-US": "30 min"
+                            },
+                            "v": "1800"
+                        },
+                        {
+                            "l": {
+                                "en-US": "60 min"
+                            },
+                            "v": "3600"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "use_custom",
+            "type": "bool",
+            "value": "false",
+            "ui": {
+                "label": {
+                    "en-US": "Use custom interval"
+                },
+                "type": "checkbox"
+            }
+        },
+        {
+            "name": "custom",
+            "type": "num",
+            "value": "15",
+            "ui": {
+                "label": {
+                    "en-US": "Seconds [s]"
+                },
+                "type": "spinner",
+                "opts": {
+                    "min": 1,
+                    "max": 3600
+                }
+            }
+        },
+        {
+            "name": "topic",
+            "type": "str",
+            "value": "",
+            "ui": {
+                "type": "input",
+                "opts": {
+                    "types": [
+                        "str",
+                        "num",
+                        "env"
+                    ]
+                }
+            }
+        }
+    ],
+    "meta": {
+        "module": "tequ-node-red-timer",
+        "version": "0.0.1",
+        "author": "juha.autioniemi@lapinamk.fi",
+        "desc": "Timer. Release every 1-3600 seconds.",
+        "license": "MIT"
+    },
+    "color": "#3FADB5",
+    "icon": "font-awesome/fa-clock-o",
+    "status": {
+        "x": 700,
+        "y": 180,
+        "wires": [
+            {
+                "id": "75adf3064c0ff4a9",
+                "port": 0
+            }
+        ]
+    },
+    "flow": [
+        {
+            "id": "f0820dd4.6c427",
+            "type": "function",
+            "z": "be4ed1a665e290d8",
+            "name": "release every interval secs",
+            "func": "function addZero(i) {\n    if (i < 10) {\n        i = \"0\" + i;\n    }\n    return i;\n}\n\nlet interval = env.get(\"interval\");\nlet use_custom = env.get(\"use_custom\");\nlet custom = env.get(\"custom\");\nlet topic = env.get(\"topic\");\n\n\nif(use_custom){\n    interval = parseInt(custom);\n}\n\nvar date     = new Date();\nvar year     = date.getFullYear();\nvar month    = addZero(date.getMonth()+1);\nvar day      = addZero(date.getDate());\nvar hh       = addZero(date.getHours());\nvar mm       = addZero(date.getMinutes());\nvar ss       = addZero(date.getSeconds());\nvar minutes  = date.getMinutes();\nvar seconds  = date.getSeconds();\nvar tsLocal = year + \"-\" +month+ \"-\" + day+\" \" + hh + \":\" + mm+ \":\" + ss;\n\nmsg.payload = {}\nmsg.payload.ts_utc   = date.toISOString();\nmsg.payload.ts_local = tsLocal;\nmsg.payload.ts_local_hh = hh;\nmsg.payload.ts_local_mm = mm;\nmsg.payload.ts_local_ss = ss;\nmsg.payload.time = hh+\":\"+mm+\":\"+ss;\nmsg.payload.month = month;\nmsg.payload.interval = interval;\nmsg.topic = topic;\n\nvar total = (minutes * 60) + seconds;  \nvar remainder = total % interval;\n    \nvar time_left = interval-remainder;\n\nif(remainder === 0)\n{\n    node.status({ fill: \"green\", shape: \"dot\", text: \"Interval hit...\"});\n    return msg;\n}\nelse\n{\n    node.status({ fill: \"red\", shape: \"dot\", text: time_left+\" s...\"});\n}",
+            "outputs": 1,
+            "timeout": "",
+            "noerr": 0,
+            "initialize": "",
+            "finalize": "",
+            "libs": [],
+            "x": 500,
+            "y": 80,
+            "wires": [
+                []
+            ]
+        },
+        {
+            "id": "c1d89c9b.15c4c",
+            "type": "inject",
+            "z": "be4ed1a665e290d8",
+            "name": "1 second timer",
+            "props": [],
+            "repeat": "1",
+            "crontab": "",
+            "once": false,
+            "onceDelay": 0.1,
+            "topic": "",
+            "x": 220,
+            "y": 80,
+            "wires": [
+                [
+                    "f0820dd4.6c427"
+                ]
+            ]
+        },
+        {
+            "id": "75adf3064c0ff4a9",
+            "type": "status",
+            "z": "be4ed1a665e290d8",
+            "name": "",
+            "scope": null,
+            "x": 560,
+            "y": 180,
+            "wires": [
+                []
+            ]
+        },
+        {
+            "id": "d0b00705a192403c",
+            "type": "subflow:be4ed1a665e290d8",
+            "z": "d93ef8d5.38b928",
+            "name": "Timer",
+            "env": [
+                {
+                    "name": "interval",
+                    "value": "15",
+                    "type": "str"
+                },
+                {
+                    "name": "custom",
+                    "value": "3600",
+                    "type": "num"
+                }
+            ],
+            "x": 750,
+            "y": 300,
+            "wires": [
+                [
+                    "3073a74275b47503"
+                ]
+            ]
+        }
+    ]
+}
